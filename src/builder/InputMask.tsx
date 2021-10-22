@@ -1,7 +1,6 @@
 import React from 'react';
-import { gunzipSync } from 'zlib';
-import { Wraper } from '../Generic';
 import { LabelSelector } from '../types';
+import { WraperProps } from './Wraper';
 
 export interface BaseInputMaskProps {
     placeholder?: string;
@@ -38,8 +37,9 @@ export interface InputMaskProps {
 }
 
 export function InputMaskBuilder(
-    ls: LabelSelector,
-    BaseInputMask: React.FC<BaseInputMaskProps>
+    BaseInputMask: React.FC<BaseInputMaskProps>,
+    Wraper: React.FC<WraperProps>,
+    ls: LabelSelector
 ) {
     const InputMask = (props: InputMaskProps) => {
         let {

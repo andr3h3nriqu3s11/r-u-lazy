@@ -1,23 +1,31 @@
-import { Button as PButton } from 'primereact/button';
-import { Calendar } from 'primereact/calendar';
 import { Dialog } from 'primereact/dialog';
 import { Dropdown as PDropdown } from 'primereact/dropdown';
-import { Editor as PEditor } from 'primereact/editor';
-import { InputMask as PInputMask } from 'primereact/inputmask';
 import { InputNumber as PInputNumber } from 'primereact/inputnumber';
 import { InputSwitch as PInputSwitch } from 'primereact/inputswitch';
-import { InputText as PInputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
-import { Messages } from 'primereact/messages';
 import React, { MouseEvent, ReactElement, useState } from 'react';
-import { Redirect } from 'react-router-dom';
-import { GenericListResponse, pairT } from '../api-ts-bindings/Generic';
-import { GenericListRequest } from '../api-ts-bindings/Requests';
-import type { BasicListResponseData, LoggedUserData, StateItems } from '../types';
-import { ButtonBuilder } from './builder/Button';
-import type { BaseButtonProps } from './builder/Button';
-import { g_displayMessageError, g_wraper, lb, lm, ls } from './GenericFunctions';
+import type { StateItems } from './types';
+import { ButtonBuilder, BaseButtonProps, ButtonProps } from './builder/Button';
+import {
+    BaseDateInputProps,
+    DateInputBuilder,
+    DateInputProps,
+} from './builder/DateInput';
+import { BaseEditorProps, EditorBuilder, EditorProps } from './builder/Editor';
+import { BaseInputProps, InputBuilder, InputProps } from './builder/Input';
+import {
+    BaseInputMaskProps,
+    InputMaskBuilder,
+    InputMaskProps,
+} from './builder/InputMask';
+import { g_wraper, lb, ls } from './GenericFunctions';
 import { LabelSelector } from './types';
+import {
+    DialogPromptBuilder,
+    DialogPromptProps,
+    DialogRequiredProps,
+} from './builder/Dialog';
+import { WraperBuilder } from './builder/Wraper';
 
 export * from './Form';
 
@@ -25,36 +33,125 @@ export function StringEmpty(s: string | null | undefined): boolean {
     return s === null || s === undefined || s === '';
 }
 
+let DepThrowErrorBuilder = <T extends unknown>(name: string, dep: string) => {
+    let DepThrow: React.FC<T> = () => {
+        throw `You can not use ${name} without ${dep} check BuildAll`;
+    };
+    return DepThrow;
+};
+
 interface BuildAllProps {
-    BaseButton: React.FC<BaseButtonProps>
+    BaseButton?: React.FC<BaseButtonProps>;
+    BaseInputMask?: React.FC<BaseInputMaskProps>;
+    BaseEditor?: React.FC<BaseEditorProps>;
+    BaseInput?: React.FC<BaseInputProps>;
+    BaseDateInput?: React.FC<BaseDateInputProps>;
+    Dialog?: React.FC<DialogRequiredProps>;
 }
 
-export function BuildAll(ls: LabelSelector,{
-    BaseButton
-}: BuildAllProps) {
+export function BuildAll(
+    ls: LabelSelector,
+    {
+        BaseButton,
+        BaseInputMask,
+        BaseEditor,
+        BaseInput,
+        BaseDateInput,
+        Dialog,
+    }: BuildAllProps
+) {
+    let Wraper = WraperBuilder(ls);
 
-    let Button = null;
+    let Button: React.FC<ButtonProps> = null;
+    let InputMask: React.FC<InputMaskProps> = null;
+    let Editor: React.FC<EditorProps> = null;
+    let Input: React.FC<InputProps> = null;
+    let DateInput: React.FC<DateInputProps> = null;
+    let DialogPrompt: React.FC<DialogPromptProps> = null;
 
     if (BaseButton) {
         Button = ButtonBuilder(BaseButton, ls);
+    } else {
+        Button = DepThrowErrorBuilder<ButtonProps>('Button', 'BaseButton');
+    }
+
+    if (BaseInputMask) {
+        InputMask = InputMaskBuilder(BaseInputMask, Wraper, ls);
+    } else {
+        InputMask = DepThrowErrorBuilder<InputProps>(
+            'InputMask',
+            'BaseInputMask'
+        );
+    }
+
+    if (BaseEditor) {
+        Editor = EditorBuilder(BaseInputMask, Wraper, ls);
+    } else {
+        Editor = DepThrowErrorBuilder<EditorProps>('Editor', 'BaseEditor');
+    }
+
+    if (BaseInput) {
+        Input = InputBuilder(BaseInput, Wraper, ls);
+    } else {
+        Input = DepThrowErrorBuilder<InputProps>('Input', 'BaseInput');
+    }
+
+    if (BaseDateInput) {
+        DateInput = DateInputBuilder(BaseDateInput, Wraper, ls);
+    } else {
+        DateInput = DepThrowErrorBuilder<DateInputProps>(
+            'DateInput',
+            'BaseDateInput'
+        );
+    }
+
+    if (Button && Dialog) {
+        DialogPrompt = DialogPromptBuilder(Dialog, Button, ls);
+    } else {
+        DialogPrompt = DepThrowErrorBuilder<DialogPromptProps>(
+            'DialogPrompt',
+            'Button and Dialog'
+        );
     }
 
     return {
-        Button
+        DialogPrompt,
+        Button,
+        InputMask,
+        Editor,
+        Input,
+        DateInput,
+        Wraper,
     };
 }
 
 //TODO: This needs to be refactored so that does not have any dependency on an icons packs
-export function StateIcon(props: { custom: StateItems; state: number; style?: React.CSSProperties; small?: boolean; onClick?: (e: MouseEvent<HTMLSpanElement>) => void }) {
+export function StateIcon(props: {
+    custom: StateItems;
+    state: number;
+    style?: React.CSSProperties;
+    small?: boolean;
+    onClick?: (e: MouseEvent<HTMLSpanElement>) => void;
+}) {
     let [tooltip, setTooltip] = useState(false),
         { custom, state, onClick } = props,
-        style = { fontSize: props.small ? '1.4em' : '1.87em', ...(props.style ?? {}) };
+        style = {
+            fontSize: props.small ? '1.4em' : '1.87em',
+            ...(props.style ?? {}),
+        };
 
     if (custom && custom[state]) {
         let icon = custom[state];
-        style = { ...style, color: icon.color ?? 'black', ...(onClick ? { cursor: 'pointer' } : {}) };
+        style = {
+            ...style,
+            color: icon.color ?? 'black',
+            ...(onClick ? { cursor: 'pointer' } : {}),
+        };
         return (
-            <span onMouseOver={() => setTooltip(true)} onMouseLeave={() => setTooltip(false)}>
+            <span
+                onMouseOver={() => setTooltip(true)}
+                onMouseLeave={() => setTooltip(false)}
+            >
                 <div
                     style={{
                         display: tooltip && icon.tooltip ? 'block' : '',
@@ -67,365 +164,25 @@ export function StateIcon(props: { custom: StateItems; state: number; style?: Re
                 >
                     {icon.tooltip}
                 </div>
-                <span onClick={onClick} className={'pi ' + icon.class} style={style}>
+                <span
+                    onClick={onClick}
+                    className={'pi ' + icon.class}
+                    style={style}
+                >
                     {icon.text ?? ''}
                 </span>
             </span>
         );
     }
-    return <span onClick={onClick} className="pi pi-question" style={{ color: 'grey', fontSize: '1.83em' }} />;
-}
-
-
-export function Editor(props: {
-    id: string;
-    disabled?: boolean;
-    label?: string;
-    style?: React.CSSProperties;
-    fieldClass?: string;
-    value?: string;
-    labelClass?: string;
-    gridless?: boolean;
-    hidden?: boolean;
-    onChange?: (e: { htmlValue: string | null; textValue: string; delta: any; source: string }) => void;
-}) {
-    let { disabled, id, label, style, fieldClass, value, labelClass, gridless, onChange, hidden } = props;
-    if (hidden) return null;
-    label = label ?? id;
-    label = ls(label) === 'LabelInfenranceFailed' ? label : ls(label);
-    if (disabled)
-        return g_wraper(
-            id,
-            label,
-            <div style={{ border: '1px solid grey', marginBottom: '3px', ...style }} className={fieldClass} dangerouslySetInnerHTML={{ __html: value ?? '' }} />,
-            false,
-            labelClass,
-            gridless
-        );
-    return g_wraper(
-        id,
-        label,
-        <div className={fieldClass}>
-            <PEditor value={value} id={id} style={style ?? { minHeight: '7em' }} onTextChange={e => (onChange ?? (() => {}))(e)} />
-        </div>,
-        false,
-        labelClass,
-        gridless
-    );
-}
-export function Input(props: {
-    id: string;
-    value?: string;
-    label?: string;
-    disabled?: boolean;
-    hidden?: boolean;
-    required?: boolean;
-    inputClass?: string;
-    labelClass?: string;
-    type?: string;
-    tooltip?: string;
-    gridless?: boolean;
-    onChange?: (e: any) => void;
-}) {
-    let { hidden, id, required, label, labelClass = 'p-col-3', inputClass = 'p-col-7', disabled, tooltip, type, value, onChange, gridless } = props;
-    label = label ?? id;
-    label = ls(label) === 'LabelInfenranceFailed' ? label : ls(label);
-    return g_wraper(
-        id,
-        label,
-        <div className={inputClass}>
-            <PInputText
-                title={disabled !== undefined && !disabled ? 'Por favor preencha este campo.' : ''}
-                tooltip={tooltip}
-                type={type}
-                value={value}
-                onChange={!disabled && onChange ? onChange : () => {}}
-                id={id}
-                disabled={disabled}
-                required={required}
-            />
-        </div>,
-        hidden,
-        labelClass,
-        gridless
-    );
-}
-export function DateInput({
-    selectionMode,
-    inputClass,
-    labelClass,
-    label,
-    id,
-    hidden,
-    gridless,
-    showTime,
-    timeOnly,
-    minDate,
-    maxDate,
-    value,
-    disabled,
-    onChange,
-}: {
-    selectionMode?: any;
-    inputClass?: string;
-    label?: string;
-    id: string;
-    labelClass?: string;
-    hidden?: boolean;
-    gridless?: boolean;
-    showTime?: boolean;
-    timeOnly?: boolean;
-    minDate?: Date;
-    maxDate?: Date;
-    value?: Date;
-    disabled?: boolean;
-    onChange?: (e: {
-        originalEvent: Event;
-        value: Date | Date[];
-        target: {
-            name: string;
-            id: string;
-            value: Date | Date[];
-        };
-    }) => void;
-}) {
-    label = label ?? id;
-    label = ls(label) === 'LabelInfenranceFailed' ? label : ls(label);
-    return g_wraper(
-        id,
-        label,
-        <div className={inputClass}>
-            <Calendar
-                selectionMode={selectionMode}
-                hourFormat={ls('hourFomart', 'default')}
-                showTime={showTime}
-                timeOnly={timeOnly}
-                minDate={minDate}
-                maxDate={maxDate}
-                yearRange={`1900:${new Date().getFullYear() + 10}`}
-                monthNavigator={true}
-                yearNavigator={true}
-                id={id}
-                dateFormat="dd-mm-yy"
-                value={value}
-                onChange={event => (onChange ?? (() => {}))(event)}
-                disabled={disabled}
-            />
-        </div>,
-        hidden,
-        labelClass,
-        gridless
-    );
-}
-export function InputNumber(props: {
-    id: string;
-    value?: string;
-    label?: string;
-    disabled?: boolean;
-    hidden?: boolean;
-    required?: boolean;
-    inputClass?: string;
-    labelClass?: string;
-    type?: string;
-    tooltip?: string;
-    gridless?: boolean;
-    suffix?: string;
-    suffixOutside?: boolean;
-    prefix?: string;
-    currency?: string;
-    minFractionDigits?: number;
-    maxFractionDigits?: number;
-    mode?: 'decimal' | 'currency';
-    locale?: string;
-    onChange?: (e: {
-        originalEvent: Event;
-        value: any;
-        target: {
-            name: string;
-            id: string;
-            value: any;
-        };
-    }) => void;
-}) {
-    let {
-        hidden,
-        id,
-        required,
-        label,
-        labelClass = 'p-col-3',
-        inputClass = 'p-col-7',
-        disabled,
-        tooltip,
-        type,
-        value,
-        onChange,
-        gridless,
-        suffix,
-        suffixOutside,
-        prefix,
-        mode,
-        currency,
-        minFractionDigits,
-        maxFractionDigits,
-        locale,
-    } = props;
-    label = label ?? id;
-    label = ls(label) === 'LabelInfenranceFailed' ? label : ls(label);
-    let valueN: number | undefined = Number(value);
-    if (isNaN(valueN)) valueN = undefined;
-    return g_wraper(
-        id,
-        label,
-        <div className={(suffixOutside ? 'p-grid ' : '') + inputClass}>
-            {(() => {
-                let a = (
-                    <PInputNumber
-                        tooltip={tooltip}
-                        type={type}
-                        value={valueN}
-                        onChange={!disabled && onChange ? onChange : () => {}}
-                        id={id}
-                        disabled={disabled}
-                        required={required}
-                        suffix={suffixOutside ? '' : suffix}
-                        prefix={prefix}
-                        mode={mode}
-                        currency={currency}
-                        minFractionDigits={minFractionDigits}
-                        maxFractionDigits={maxFractionDigits}
-                        locale={locale}
-                    />
-                );
-                if (suffixOutside)
-                    return (
-                        <>
-                            <div className="p-col">{a}</div>
-                            <div className="p-col-1">{suffix ?? ''}</div>
-                        </>
-                    );
-                return a;
-            })()}
-        </div>,
-        hidden,
-        labelClass,
-        gridless
-    );
-}
-
-interface DialogPromtProps {
-    hidden?: boolean;
-    yesbtt?: { label?: string; class?: string; icon?: string };
-    nobtt?: { label?: string; class?: string; icon?: string };
-    onConfirm?: (e: React.MouseEvent<HTMLButtonElement>) => void;
-    onDeny?: (e: React.MouseEvent<HTMLButtonElement>) => void;
-    wraperClass?: string;
-    label?: string;
-    icon?: string;
-    bttClass?: string;
-    disabled?: boolean;
-    id?: string;
-    text?: string;
-}
-export const DialogPromt: React.FC<DialogPromtProps> = ({ hidden, yesbtt, onConfirm, nobtt, onDeny, wraperClass, label, icon, bttClass, disabled, text: textIn, id }) => {
-    let [visible, setVisible] = useState(false);
-    if (hidden) return null;
-    //TODO: deal with this `null as any`
-    let text = ls(textIn, 'dialog', null as any) ?? textIn;
-    let footer = (
-        <div>
-            <Button
-                label={yesbtt?.label ?? 'yes'}
-                bttClass={yesbtt?.class ?? 'p-button-success'}
-                icon={yesbtt?.icon}
-                wraperClass=""
-                onClick={e => {
-                    e.preventDefault();
-                    setVisible(false);
-                    if (onConfirm) onConfirm(e);
-                }}
-            />
-            <Button
-                label={nobtt?.label ?? 'no'}
-                wraperClass=""
-                bttClass={nobtt?.class ?? 'p-button-danger'}
-                icon={nobtt?.icon}
-                onClick={e => {
-                    e.preventDefault();
-                    setVisible(false);
-                    if (onDeny) onDeny(e);
-                }}
-            />
-        </div>
-    );
     return (
-        <div className={wraperClass}>
-            <Button
-                label={label}
-                icon={icon}
-                wraperClass=""
-                bttClass={bttClass}
-                onClick={e => {
-                    e.preventDefault();
-                    if (disabled) return;
-                    setVisible(true);
-                }}
-                type="button"
-                disabled={disabled}
-            />
-            <Dialog
-                visible={visible}
-                onHide={() => setVisible(false)}
-                footer={footer}
-                style={{ width: '50vw' }}
-                id={id}
-                header={lb(label) === 'LabelInfenranceFailed' ? label : lb(label)}
-            >
-                {text}
-            </Dialog>
-        </div>
+        <span
+            onClick={onClick}
+            className="pi pi-question"
+            style={{ color: 'grey', fontSize: '1.83em' }}
+        />
     );
-};
-
-interface WraperProps {
-    hidden?: boolean;
-    label?: string;
-    children: ReactElement[] | ReactElement | Element;
-    id?: string;
-    class?: string;
-    gridless?: boolean;
-    reversed?: boolean;
 }
-export const Wraper: React.FC<WraperProps> = ({ hidden, label, children, id, class: className, gridless, reversed }: WraperProps) => {
-    if (hidden) return <></>;
-    if ((StringEmpty(label) && StringEmpty(id)) || label === '') return <>{children}</>;
-    label = label ?? id;
-    label = ls(label) === 'LabelInfenranceFailed' ? label : ls(label);
-    let labelbody = (
-        <div key={`${id}divlable`} className={className}>
-            <label htmlFor={id}>{label}</label>
-        </div>
-    );
-    if (!id)
-        labelbody = (
-            <div key={`${id}divlabel`} className={className}>
-                {label}
-            </div>
-        );
-    if (gridless && reversed) return <>{[children, labelbody]}</>;
-    if (gridless) return <>{[labelbody, children]}</>;
-    if (reversed)
-        return (
-            <div key={`${id}div`} className="p-grid">
-                {labelbody} {children}
-            </div>
-        );
-    return (
-        <div key={`${id}div${label}`} className="p-grid">
-            {' '}
-            {labelbody} {children}{' '}
-        </div>
-    );
-};
+
 interface TextAreaProps {
     id: string;
     label?: string;
@@ -488,7 +245,11 @@ interface DropdownProps<T> {
     placeholder?: string;
     value?: string;
     disabled?: boolean;
-    onChange: (e: { originalEvent: Event; value: any; target: { name: string; id: string; value: any } }) => void;
+    onChange: (e: {
+        originalEvent: Event;
+        value: any;
+        target: { name: string; id: string; value: any };
+    }) => void;
     required?: boolean;
     showClear?: boolean;
     fClass?: string;
@@ -512,7 +273,13 @@ export const Dropdown = function <T>({
     gridless,
 }: DropdownProps<T>) {
     return (
-        <Wraper label={label} id={id} class={lClass} hidden={hidden} gridless={gridless}>
+        <Wraper
+            label={label}
+            id={id}
+            class={lClass}
+            hidden={hidden}
+            gridless={gridless}
+        >
             <div className={fClass}>
                 <PDropdown
                     key={`${id}drop`}
@@ -545,28 +312,67 @@ interface SwitchProps<T> {
     hidden?: boolean;
     gridless?: boolean;
 
-    onChange?: (e: { originalEvent: Event; value: boolean; target: { name: string; id: string; value: boolean } }) => void;
+    onChange?: (e: {
+        originalEvent: Event;
+        value: boolean;
+        target: { name: string; id: string; value: boolean };
+    }) => void;
 }
-export const InputSwitch = function <T>({ id, checked, disabled, tooltip, onChange, fClass, label, lClass, hidden, gridless }: SwitchProps<T>) {
+export const InputSwitch = function <T>({
+    id,
+    checked,
+    disabled,
+    tooltip,
+    onChange,
+    fClass,
+    label,
+    lClass,
+    hidden,
+    gridless,
+}: SwitchProps<T>) {
     return (
-        <Wraper label={label} id={id} class={lClass} hidden={hidden} gridless={gridless}>
+        <Wraper
+            label={label}
+            id={id}
+            class={lClass}
+            hidden={hidden}
+            gridless={gridless}
+        >
             <div className={fClass}>
-                <PInputSwitch id={id} checked={checked} disabled={disabled} tooltip={tooltip} onChange={onChange} />
+                <PInputSwitch
+                    id={id}
+                    checked={checked}
+                    disabled={disabled}
+                    tooltip={tooltip}
+                    onChange={onChange}
+                />
             </div>
         </Wraper>
     );
 };
 
 interface TreatDateProps {
-    date: string,
-    extended?: boolean,
-    table?: boolean,
-    returnString?: boolean
+    date: string;
+    extended?: boolean;
+    table?: boolean;
+    returnString?: boolean;
 }
-export const TreatDate({date, extended = true, table = false, returnString = false}: TreatDateProps) {
+
+export const TreatDate = ({
+    date,
+    extended = true,
+    table = false,
+    returnString = false,
+}: TreatDateProps) => {
     if (!date || !date.match(/^[\d-]{10}T[\d:]{8}.*/)) return <span></span>;
     let matched = date.match(/^(\d{4})-(\d{2})-(\d{2})T([\d:]{8}).*/);
-    let formated = matched[3] + '-' + matched[2] + '-' + matched[1] + (extended ? ' ' + matched[4] : ''); //dateformat(date, 'dd-mm-yyyy' + (extended ? ' HH:MM:ss': ''))
+    let formated =
+        matched[3] +
+        '-' +
+        matched[2] +
+        '-' +
+        matched[1] +
+        (extended ? ' ' + matched[4] : ''); //dateformat(date, 'dd-mm-yyyy' + (extended ? ' HH:MM:ss': ''))
     return returnString ? (
         date ? (
             formated
@@ -574,22 +380,48 @@ export const TreatDate({date, extended = true, table = false, returnString = fal
             ''
         )
     ) : !table ? (
-        <span style={{ verticalAlign: 'center', paddingTop: '.5em', paddingBottom: '.5m' }}>{date ? formated : ''}</span>
+        <span
+            style={{
+                verticalAlign: 'center',
+                paddingTop: '.5em',
+                paddingBottom: '.5m',
+            }}
+        >
+            {date ? formated : ''}
+        </span>
     ) : (
-        <p style={{ margin: '0px', textAlign: 'right' }}>{date ? formated : ''}</p>
+        <p style={{ margin: '0px', textAlign: 'right' }}>
+            {date ? formated : ''}
+        </p>
     );
-}
+};
 
 /**
  * @function treats dates to the some of the iso formats without any timezone information
  * @returns the treated date
  */
-export function formatDate(date: string | Date, widthTime = false, end = false) {
+export function formatDate(
+    date: string | Date,
+    widthTime = false,
+    end = false
+) {
     if (!date) return '';
     let d = new Date(date);
-    if (end) return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T23:59:59.000`;
-    if (!widthTime) return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T00:00:00.000`;
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}:${String(
-        d.getMinutes()
-    ).padStart(2, '0')}:00.000`;
+    if (end)
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+            2,
+            '0'
+        )}-${String(d.getDate()).padStart(2, '0')}T23:59:59.000`;
+    if (!widthTime)
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+            2,
+            '0'
+        )}-${String(d.getDate()).padStart(2, '0')}T00:00:00.000`;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+        2,
+        '0'
+    )}-${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(
+        2,
+        '0'
+    )}:${String(d.getMinutes()).padStart(2, '0')}:00.000`;
 }
