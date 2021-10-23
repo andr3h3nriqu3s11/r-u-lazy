@@ -38,7 +38,7 @@ import {
     TextAreaProps,
 } from './builder/TextArea';
 import { WraperBuilder } from './builder/Wraper';
-import { FormBuilder, FormConfig, GDivBuilder } from './Form';
+import { FormBuilderOld, FormConfig, GDivBuilder } from './Form';
 import { LabelSelector, StateItems } from './types';
 
 export function StringEmpty(s: string | null | undefined): boolean {
@@ -189,7 +189,7 @@ export function BuildAll(
 
     //Form stuff
 
-    let Form = FormBuilder(ls, config, {
+    let Form = FormBuilderOld(ls, config, {
         InputMask,
         Wraper,
         Editor,

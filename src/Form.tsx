@@ -1,4 +1,4 @@
-import React, { MouseEvent, ReactElement, useState } from 'react';
+import React, { Component, MouseEvent, ReactElement, useState } from 'react';
 import { DateInputProps } from './builder/DateInput';
 import { DropdownProps } from './builder/Dropdown';
 import { EditorProps } from './builder/Editor';
@@ -11,9 +11,234 @@ import { WraperProps } from './builder/Wraper';
 import { formatDate, StateIcon, StringEmpty, treatDate } from './index';
 import { LabelSelector, StateItems } from './types';
 
+type AllPossible =
+    | string
+    | number
+    | boolean
+    | {}
+    | React.ReactElement<any, string | React.JSXElementConstructor<any>>
+    | React.ReactNodeArray
+    | React.ReactPortal
+    | null
+    | undefined;
+
+export interface RULazyFormElement<Name extends string> {
+    _t?: Name;
+    _isLazyElement?: boolean;
+}
+
+export interface RULazyFormObjectAccessElement<T, Name extends string>
+    extends RULazyFormElement<Name> {
+    _isLazyObject?: true;
+    d: keyof T;
+}
+
+export interface RULazyInterceptor<BaseProps, Extra, K = {}> {
+    t: string;
+    Component: React.FC<
+        { props: BaseProps; fromForm: FormPassDownProps<Extra> } & K
+    >;
+}
+
+export type RULazyInterceptorObjectAccess<BaseProps, Extra, SetT> =
+    RULazyInterceptor<BaseProps, Extra, { data: any; setData: SetT }>;
+
+export interface FormPassDownProps<Extra> {
+    hidden?: boolean;
+    extra: Extra;
+}
+
+export interface FormProps<T, SetT, Extra>
+    extends FormPassDownProps<Extra>,
+        RULazyFormElement<'form'> {
+    obj: T;
+    setObj: SetT;
+
+    children?: AllPossible;
+    onSubmit?: React.FormEventHandler<HTMLFormElement>;
+
+    className?: string;
+    formRef?: (e: HTMLFormElement | null) => void;
+}
+
+export function FormBuilder<T, SetT, Extra>(
+    formElements: RULazyInterceptor<unknown, Extra>[]
+) {
+    interface ProcessChildren<T, SetT, Extra> extends FormPassDownProps<Extra> {
+        obj?: T;
+        setObj: SetT;
+    }
+
+    const { Element: Div } = FormElementBuilder('div', () => null);
+
+    interface DivProps {
+        className: string;
+        children: AllPossible;
+    }
+
+    const DivInterceptor: RULazyInterceptor<
+        DivProps,
+        Extra,
+        {
+            setObj: SetT;
+            obj: T;
+        }
+    > = {
+        t: 'div',
+        Component: ({ props, fromForm, setObj, obj }) => {
+            return (
+                <div className={props.className}>
+                    {React.Children.map(props.children, e =>
+                        processChildren(e, { ...fromForm, setObj, obj })
+                    )}
+                </div>
+            );
+        },
+    };
+
+    const processChildren = (
+        a: AllPossible,
+        props: ProcessChildren<T, SetT, Extra>
+    ): AllPossible => {
+        let { setObj, obj = {} as T } = props;
+
+        if (
+            !a ||
+            (
+                a as React.ReactElement<
+                    any,
+                    string | React.JSXElementConstructor<any>
+                >
+            ).props === undefined
+        )
+            return a;
+
+        let ai = a as React.ReactElement<
+            any,
+            string | React.JSXElementConstructor<any>
+        >;
+
+        if (ai.props._isLazyElement) {
+            if (ai.props._t === 'div') {
+                return (
+                    <DivInterceptor.Component
+                        extra={props.extra}
+                        setObj={setObj}
+                        obj={obj}
+                        {...ai.props}
+                    />
+                );
+            }
+            for (let formElement of formElements) {
+                if (formElement.t === ai.props._t) {
+                    let Comp = formElement.Component;
+                    let d = {
+                        hidden: props.hidden,
+                        extra: props.extra,
+                    };
+                    if (ai.props._isLazyObject) {
+                        return (
+                            <Comp
+                                {...ai.props}
+                                {...d}
+                                data={obj[ai.props.d]}
+                                setData={setObj}
+                            />
+                        );
+                    } else {
+                        return <Comp {...ai.props} {...d} />;
+                    }
+                }
+            }
+        }
+
+        return ai;
+    };
+
+    const Form: React.FC<FormProps<T, SetT, Extra>> = props => {
+        let { onSubmit, children, hidden } = props;
+
+        if (hidden) return null;
+
+        return (
+            <form
+                style={{ width: '100%', height: '100%' }}
+                onSubmit={onSubmit}
+                ref={e => (props.formRef ?? (() => {}))(e)}
+            >
+                {React.Children.map(children, e => processChildren(e, props))}
+            </form>
+        );
+    };
+    Form.defaultProps = {
+        _t: 'form',
+    };
+
+    return { Form, Div };
+}
+
+export function FormElementBuilder<Props, Extra, Name extends string>(
+    name: Name,
+    FC: React.FC<{ props: Props; fromForm: FormPassDownProps<Extra> }>
+) {
+    let Element: React.FC<Props & RULazyFormElement<Name>> = () => null;
+    //TODO: There is probably a better way of doing this
+    (Element as any).defaultProps = {
+        _isLazyElement: true,
+        _t: name,
+    };
+
+    let Interceptor: RULazyInterceptor<Props, Extra, {}> = {
+        Component: FC,
+        t: name,
+    };
+
+    return { Element, Interceptor };
+}
+
+export function FormElementDataBuilder<
+    Props,
+    T,
+    Extra,
+    SetT,
+    Name extends string
+>(
+    name: Name,
+    FC: React.FC<
+        { props: Props; fromForm: FormPassDownProps<Extra> } & {
+            data: any;
+            setData: SetT;
+        }
+    >
+) {
+    let Element: React.FC<RULazyFormObjectAccessElement<T, Name> & Props> =
+        () => null;
+    //TODO: There is probably a better way of doing this
+    (Element.defaultProps as any) = {
+        _isLazyElement: true,
+        _isLazyObject: true,
+        _t: name,
+    };
+
+    let Interceptor: RULazyInterceptorObjectAccess<Props, Extra, SetT> = {
+        Component: FC,
+        t: name,
+    };
+
+    return { Element, Interceptor };
+}
+
 export type StringIndexed = Record<string, any>;
 
-export interface FormProps<T extends StringIndexed = any> {
+/**
+ *
+ *
+ * Old
+ *
+ *
+ */
+
+export interface FormPropsOld<T extends StringIndexed = any> {
     onSubmit?: React.FormEventHandler<HTMLFormElement>;
     children?: ReactElement<any, any>[] | ReactElement | null;
     t?: string;
@@ -50,7 +275,7 @@ export const processChildren = <T extends StringIndexed>(
     ls: LabelSelector,
     config: FormConfig,
     ai: ReactElement,
-    props: FormProps<T>,
+    props: FormPropsOld<T>,
     hemlProps: HtmlElmProps<T>
 ): ReactElement => {
     let {
@@ -431,12 +656,12 @@ export const processChildren = <T extends StringIndexed>(
     }
 };
 
-export function FormBuilder<K>(
+export function FormBuilderOld<K>(
     ls: LabelSelector,
     config: FormConfig,
     hemlProps: HtmlElmProps<K>
 ) {
-    const Form: React.FC<FormProps<K>> = (props: FormProps<K>) => {
+    const Form: React.FC<FormPropsOld<K>> = (props: FormPropsOld<K>) => {
         let { onSubmit, children } = props;
 
         let pChildren: ReactElement[] | ReactElement = [];
@@ -504,10 +729,10 @@ export interface GDivProps<T = any> extends GenericElementProps<T> {
     class?: string;
     style?: React.CSSProperties;
     children?: ReactElement[] | ReactElement | null;
-    overload?: FormProps<T>;
+    overload?: FormPropsOld<T>;
     hidden?: boolean;
     grid?: boolean;
-    extra?: FormProps;
+    extra?: FormPropsOld;
     group?: boolean;
 }
 
