@@ -1,21 +1,15 @@
 import React, { MouseEvent, ReactElement, useState } from 'react';
+import { DateInputProps } from './builder/DateInput';
+import { DropdownProps } from './builder/Dropdown';
+import { EditorProps } from './builder/Editor';
+import { InputProps } from './builder/Input';
+import { InputMaskProps } from './builder/InputMask';
+import { InputNumberProps } from './builder/InputNumber';
+import { SwitchProps } from './builder/InputSwitch';
+import { TextAreaProps } from './builder/TextArea';
+import { WraperProps } from './builder/Wraper';
+import { formatDate, StateIcon, StringEmpty, treatDate } from './Generic';
 import { LabelSelector, StateItems } from './types';
-import {
-    DateInput,
-    Dropdown,
-    Editor,
-    formatDate,
-    Input,
-    InputMask,
-    InputNumber,
-    InputSwitch,
-    StateIcon,
-    StringEmpty,
-    TextArea,
-    TreatDate,
-    Wraper,
-} from './Generic';
-import { lchown } from 'fs';
 
 export type StringIndexed = Record<string, any>;
 
@@ -34,9 +28,20 @@ interface FormProps<T extends StringIndexed = any> {
     formRef?: (e: HTMLFormElement | null) => void;
 }
 
-interface FormConfig {
+export interface FormConfig {
     locale: string;
     currency: string;
+}
+interface HtmlElmProps<T> {
+    Wraper: React.FC<WraperProps>;
+    InputMask: React.FC<InputMaskProps>;
+    Editor: React.FC<EditorProps>;
+    Input: React.FC<InputProps>;
+    DateInput: React.FC<DateInputProps>;
+    TextArea: React.FC<TextAreaProps>;
+    Dropdown: React.FC<DropdownProps<T>>;
+    InputSwitch: React.FC<SwitchProps>;
+    InputNumber: React.FC<InputNumberProps>;
     Messages: React.ForwardRefExoticComponent<
         React.RefAttributes<unknown>
     > | null;
@@ -47,8 +52,22 @@ export const processChildren = <T extends StringIndexed>(
     ls: LabelSelector,
     config: FormConfig,
     ai: ReactElement,
-    props: FormProps<T>
+    props: FormProps<T>,
+    hemlProps: HtmlElmProps<T>
 ): ReactElement => {
+    let {
+        Input,
+        Wraper,
+        InputMask,
+        InputSwitch,
+        DateInput,
+        TextArea,
+        Dropdown,
+        Editor,
+        InputNumber,
+        Messages
+    } = hemlProps;
+
     let obj: T = props.obj ?? ({} as T);
     let { setObj = () => {} } = props;
     if (ai.props && ai.props.isGenericFormElement) {
@@ -331,15 +350,13 @@ export const processChildren = <T extends StringIndexed>(
             let isDate = value
                 ? String(value).match(/^[\d-]{10}T[\d:]{8}.*/)
                 : false;
-            let valueO = isDate ? (
-                <TreatDate
-                    date={value}
-                    extended={vGen.props.extended}
-                    returnString
-                />
-            ) : (
-                value
-            );
+            let valueO = isDate
+                ? treatDate({
+                      date: value,
+                      extended: vGen.props.extended,
+                      returnString: true,
+                  })
+                : value;
             let label =
                 ls(vGen.props.l ?? '') === 'LabelInfenranceFailed'
                     ? vGen.props.l ?? ls(String(vGen.props.d))
@@ -373,9 +390,15 @@ export const processChildren = <T extends StringIndexed>(
             let pChildren = dGen.props.children
                 ? Array.isArray(dGen.props.children)
                     ? React.Children.map(dGen.props.children, e =>
-                          processChildren(ls, config, e, nProps)
+                          processChildren(ls, config, e, nProps, hemlProps)
                       )
-                    : processChildren(ls, config, dGen.props.children, nProps)
+                    : processChildren(
+                          ls,
+                          config,
+                          dGen.props.children,
+                          nProps,
+                          hemlProps
+                      )
                 : null;
 
             if (dGen.props.group && className === GDivDefaultPropValues.class) {
@@ -393,13 +416,8 @@ export const processChildren = <T extends StringIndexed>(
                 </div>
             );
         } else if (gen.props.t === 'messages') {
-            if (!config.Messages) {
-                throw 'No messages class defined';
-            }
             //TODO: improve this
             let dGen: ReactElement<GMessagesProps<any, T>> = gen as any;
-
-            let Messages = config.Messages;
 
             return (
                 <div className="p-col-12">
@@ -413,7 +431,11 @@ export const processChildren = <T extends StringIndexed>(
     }
 };
 
-export function FromGenerator<K>(ls: LabelSelector, config) {
+export function FormBuilder<K>(
+    ls: LabelSelector,
+    config: FormConfig,
+    hemlProps: HtmlElmProps<K>
+) {
     const Form: React.FC<FormProps<K>> = (props: FormProps<K>) => {
         let { onSubmit, children } = props;
 
@@ -422,14 +444,15 @@ export function FromGenerator<K>(ls: LabelSelector, config) {
         if (children) {
             if (Array.isArray(pChildren))
                 pChildren = React.Children.map(children, e =>
-                    processChildren(ls, config, e, props)
+                    processChildren(ls, config, e, props, hemlProps)
                 );
             else
                 pChildren = processChildren(
                     ls,
                     config,
                     children as ReactElement,
-                    props
+                    props,
+                    hemlProps
                 );
         }
 
@@ -496,7 +519,11 @@ const GDivDefaultPropValues = {
     children: null,
 };
 
-export const GDivBuilder = (ls: LabelSelector, config: FormConfig) => {
+export const GDivBuilder = (
+    ls: LabelSelector,
+    config: FormConfig,
+    hemlProps: HtmlElmProps<unknown>
+) => {
     const GDiv: React.FC<GDivProps> = props => {
         let { children } = props;
         let pChildren: ReactElement[] | ReactElement = [];
@@ -504,14 +531,15 @@ export const GDivBuilder = (ls: LabelSelector, config: FormConfig) => {
         if (children) {
             if (Array.isArray(pChildren))
                 pChildren = React.Children.map(children, (e: ReactElement) =>
-                    processChildren(ls, config, e, props)
+                    processChildren(ls, config, e, props, hemlProps)
                 );
             else
                 pChildren = processChildren(
                     ls,
                     config,
                     children as ReactElement,
-                    props
+                    props,
+                    hemlProps
                 );
         }
 

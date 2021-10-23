@@ -2,7 +2,7 @@ import React from 'react';
 import { LabelSelector } from '../types';
 import { WraperProps } from './Wraper';
 
-interface InputNumberProps {
+export interface InputNumberProps {
     id: string;
     value?: string;
     label?: string;
@@ -61,8 +61,7 @@ export interface BaseInputNumber {
 
 export function InputNumberBuilder(
     BaseInputNumber: React.FC<BaseInputNumber>,
-    Wraper: React.FC<WraperProps>,
-    ls: LabelSelector
+    Wraper: React.FC<WraperProps>
 ) {
     const InputNumber = (props: InputNumberProps) => {
         let {
@@ -88,11 +87,6 @@ export function InputNumberBuilder(
             locale,
         } = props;
         label = label ?? id;
-        label =
-            ls(label, undefined, 'LabelInfenranceFailed') ===
-            'LabelInfenranceFailed'
-                ? label
-                : ls(label);
         let valueN: number | undefined = Number(value);
         if (isNaN(valueN)) valueN = undefined;
         return (

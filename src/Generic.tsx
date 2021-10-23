@@ -1,16 +1,20 @@
-import { Dialog } from 'primereact/dialog';
-import { Dropdown as PDropdown } from 'primereact/dropdown';
-import { InputNumber as PInputNumber } from 'primereact/inputnumber';
-import { InputSwitch as PInputSwitch } from 'primereact/inputswitch';
-import { InputTextarea } from 'primereact/inputtextarea';
-import React, { MouseEvent, ReactElement, useState } from 'react';
-import type { StateItems } from './types';
-import { ButtonBuilder, BaseButtonProps, ButtonProps } from './builder/Button';
+import React, { MouseEvent, useState } from 'react';
+import { BaseButtonProps, ButtonBuilder, ButtonProps } from './builder/Button';
 import {
     BaseDateInputProps,
     DateInputBuilder,
     DateInputProps,
 } from './builder/DateInput';
+import {
+    DialogPromptBuilder,
+    DialogPromptProps,
+    DialogRequiredProps,
+} from './builder/Dialog';
+import {
+    BaseDropdownProps,
+    DropdownBuilder,
+    DropdownProps,
+} from './builder/Dropdown';
 import { BaseEditorProps, EditorBuilder, EditorProps } from './builder/Editor';
 import { BaseInputProps, InputBuilder, InputProps } from './builder/Input';
 import {
@@ -18,16 +22,25 @@ import {
     InputMaskBuilder,
     InputMaskProps,
 } from './builder/InputMask';
-import { g_wraper, lb, ls } from './GenericFunctions';
-import { LabelSelector } from './types';
 import {
-    DialogPromptBuilder,
-    DialogPromptProps,
-    DialogRequiredProps,
-} from './builder/Dialog';
+    BaseInputNumber,
+    InputNumberBuilder,
+    InputNumberProps,
+} from './builder/InputNumber';
+import {
+    BaseInputSwitchProps,
+    InputSwitchBuilder,
+    SwitchProps,
+} from './builder/InputSwitch';
+import {
+    BaseTextAreaProps,
+    TextAreaBuilder,
+    TextAreaProps,
+} from './builder/TextArea';
 import { WraperBuilder } from './builder/Wraper';
-
-export * from './Form';
+import { FormBuilder, FormConfig, GDivBuilder } from './Form';
+import type { StateItems } from './types';
+import { LabelSelector } from './types';
 
 export function StringEmpty(s: string | null | undefined): boolean {
     return s === null || s === undefined || s === '';
@@ -46,11 +59,23 @@ interface BuildAllProps {
     BaseEditor?: React.FC<BaseEditorProps>;
     BaseInput?: React.FC<BaseInputProps>;
     BaseDateInput?: React.FC<BaseDateInputProps>;
+    BaseTextArea?: React.FC<BaseTextAreaProps>;
+    BaseDropdown?: React.FC<BaseDropdownProps>;
+    BaseInputSwitch?: React.FC<BaseInputSwitchProps>;
+    BaseInputNumber?: React.FC<BaseInputNumber>;
+
     Dialog?: React.FC<DialogRequiredProps>;
+
+    Messages?: React.ForwardRefExoticComponent<
+        React.RefAttributes<unknown>
+    > | null;
 }
+
+export interface Config extends FormConfig {}
 
 export function BuildAll(
     ls: LabelSelector,
+    config: Config,
     {
         BaseButton,
         BaseInputMask,
@@ -58,6 +83,11 @@ export function BuildAll(
         BaseInput,
         BaseDateInput,
         Dialog,
+        BaseTextArea,
+        BaseDropdown,
+        BaseInputSwitch,
+        BaseInputNumber,
+        Messages,
     }: BuildAllProps
 ) {
     let Wraper = WraperBuilder(ls);
@@ -68,6 +98,10 @@ export function BuildAll(
     let Input: React.FC<InputProps> = null;
     let DateInput: React.FC<DateInputProps> = null;
     let DialogPrompt: React.FC<DialogPromptProps> = null;
+    let TextArea: React.FC<TextAreaProps> = null;
+    let Dropdown: React.FC<DropdownProps<unknown>> = null;
+    let InputSwitch: React.FC<SwitchProps> = null;
+    let InputNumber: React.FC<InputNumberProps> = null;
 
     if (BaseButton) {
         Button = ButtonBuilder(BaseButton, ls);
@@ -105,6 +139,42 @@ export function BuildAll(
         );
     }
 
+    if (BaseTextArea) {
+        TextArea = TextAreaBuilder(BaseTextArea, Wraper);
+    } else {
+        TextArea = DepThrowErrorBuilder<TextAreaProps>(
+            'TextArea',
+            'BaseTextArea'
+        );
+    }
+
+    if (BaseDropdown) {
+        Dropdown = DropdownBuilder(BaseDropdown, Wraper);
+    } else {
+        Dropdown = DepThrowErrorBuilder<DropdownProps<unknown>>(
+            'Dropdown',
+            'BaseDropdown'
+        );
+    }
+
+    if (BaseInputSwitch) {
+        InputSwitch = InputSwitchBuilder(BaseInputSwitch, Wraper);
+    } else {
+        InputSwitch = DepThrowErrorBuilder<SwitchProps>(
+            'InputSwitch',
+            'BaseInputSwitch'
+        );
+    }
+
+    if (BaseInputNumber) {
+        InputNumber = InputNumberBuilder(BaseInputNumber, Wraper);
+    } else {
+        InputNumber = DepThrowErrorBuilder<InputNumberProps>(
+            'InputNumber',
+            'BaseInputNumber'
+        );
+    }
+
     if (Button && Dialog) {
         DialogPrompt = DialogPromptBuilder(Dialog, Button, ls);
     } else {
@@ -114,6 +184,41 @@ export function BuildAll(
         );
     }
 
+    if (!Messages) {
+        DialogPrompt = DepThrowErrorBuilder<DialogPromptProps>(
+            'Messages',
+            'Messages'
+        );
+    }
+
+    //Form stuff
+
+    let Form = FormBuilder(ls, config, {
+        InputMask,
+        Wraper,
+        Editor,
+        Input,
+        InputNumber,
+        InputSwitch,
+        DateInput,
+        TextArea,
+        Dropdown,
+        Messages,
+    });
+
+    let GDiv = GDivBuilder(ls, config, {
+        InputMask,
+        Wraper,
+        Editor,
+        Input,
+        InputNumber,
+        InputSwitch,
+        DateInput,
+        TextArea,
+        Dropdown,
+        Messages,
+    });
+
     return {
         DialogPrompt,
         Button,
@@ -122,6 +227,12 @@ export function BuildAll(
         Input,
         DateInput,
         Wraper,
+        TextArea,
+        Dropdown,
+        InputSwitch,
+        InputNumber,
+        Form,
+        GDiv,
     };
 }
 
@@ -183,174 +294,6 @@ export function StateIcon(props: {
     );
 }
 
-interface TextAreaProps {
-    id: string;
-    label?: string;
-    labelClass?: string;
-    inputClass?: string;
-    hidden?: boolean;
-    gridless?: boolean;
-    style?: React.CSSProperties;
-    tooltip?: string;
-    value?: string;
-    disabled?: boolean;
-    required?: boolean;
-    onChange?: (e: React.FormEvent<HTMLTextAreaElement>) => void;
-}
-export const TextArea: React.FC<TextAreaProps> = ({
-    id,
-    label,
-    labelClass,
-    hidden,
-    gridless,
-    inputClass,
-    style,
-    tooltip,
-    value,
-    disabled,
-    required,
-    onChange = () => {},
-}: TextAreaProps) => {
-    label = label ?? id;
-    label = ls(label) === 'LabelInfenranceFailed' ? label : ls(label);
-    return g_wraper(
-        id,
-        label,
-        <div className={inputClass}>
-            <InputTextarea
-                style={style}
-                tooltip={tooltip}
-                value={value}
-                onChange={e => (disabled ? () => {} : onChange(e))}
-                title={'Por favor preencha este campo'}
-                id={id}
-                disabled={disabled}
-                required={required}
-            />
-        </div>,
-        hidden,
-        labelClass,
-        gridless
-    );
-};
-
-interface DropdownProps<T> {
-    id: string;
-    options: { value: string; label: string }[];
-    label?: string;
-    lClass?: string;
-    hidden?: boolean;
-    itemTemplate?: (option: T) => React.ReactNode;
-    filter?: boolean;
-    placeholder?: string;
-    value?: string;
-    disabled?: boolean;
-    onChange: (e: {
-        originalEvent: Event;
-        value: any;
-        target: { name: string; id: string; value: any };
-    }) => void;
-    required?: boolean;
-    showClear?: boolean;
-    fClass?: string;
-    gridless?: boolean;
-}
-export const Dropdown = function <T>({
-    label,
-    id,
-    lClass,
-    hidden,
-    itemTemplate,
-    filter,
-    options,
-    placeholder,
-    value,
-    disabled,
-    onChange,
-    required,
-    showClear,
-    fClass,
-    gridless,
-}: DropdownProps<T>) {
-    return (
-        <Wraper
-            label={label}
-            id={id}
-            class={lClass}
-            hidden={hidden}
-            gridless={gridless}
-        >
-            <div className={fClass}>
-                <PDropdown
-                    key={`${id}drop`}
-                    itemTemplate={itemTemplate}
-                    filter={filter}
-                    filterBy="label, value"
-                    options={options}
-                    placeholder={placeholder}
-                    value={value}
-                    onChange={e => (disabled ? () => {} : onChange(e))}
-                    disabled={disabled}
-                    id={id}
-                    required={required}
-                    showClear={showClear}
-                />
-            </div>
-        </Wraper>
-    );
-};
-
-interface SwitchProps<T> {
-    id: string;
-    checked?: boolean;
-    disabled?: boolean;
-    tooltip?: string;
-
-    fClass?: string;
-    label?: string;
-    lClass?: string;
-    hidden?: boolean;
-    gridless?: boolean;
-
-    onChange?: (e: {
-        originalEvent: Event;
-        value: boolean;
-        target: { name: string; id: string; value: boolean };
-    }) => void;
-}
-export const InputSwitch = function <T>({
-    id,
-    checked,
-    disabled,
-    tooltip,
-    onChange,
-    fClass,
-    label,
-    lClass,
-    hidden,
-    gridless,
-}: SwitchProps<T>) {
-    return (
-        <Wraper
-            label={label}
-            id={id}
-            class={lClass}
-            hidden={hidden}
-            gridless={gridless}
-        >
-            <div className={fClass}>
-                <PInputSwitch
-                    id={id}
-                    checked={checked}
-                    disabled={disabled}
-                    tooltip={tooltip}
-                    onChange={onChange}
-                />
-            </div>
-        </Wraper>
-    );
-};
-
 interface TreatDateProps {
     date: string;
     extended?: boolean;
@@ -358,7 +301,7 @@ interface TreatDateProps {
     returnString?: boolean;
 }
 
-export const TreatDate = ({
+export const treatDate = ({
     date,
     extended = true,
     table = false,
