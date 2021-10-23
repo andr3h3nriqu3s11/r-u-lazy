@@ -30,21 +30,21 @@ export interface DateInputProps {
 }
 
 export interface BaseDateInputProps {
-    selectionMode: string;
-    hourFormat: string;
-    showTime: boolean;
-    timeOnly: boolean;
-    minDate: Date;
-    maxDate: Date;
-    yearRange: string;
-    monthNavigator: boolean;
-    yearNavigator: boolean;
-    id: string;
-    dateFormat: string;
-    value: Date | Date[];
+    selectionMode?: string;
+    hourFormat?: string;
+    showTime?: boolean;
+    timeOnly?: boolean;
+    minDate?: Date;
+    maxDate?: Date;
+    yearRange?: string;
+    monthNavigator?: boolean;
+    yearNavigator?: boolean;
+    id?: string;
+    dateFormat?: string;
+    value?: Date | Date[];
     //TODO deal with as any
-    onChange: (e: any) => void;
-    disabled: boolean;
+    onChange?: (e: any) => void;
+    disabled?: boolean;
 }
 
 export function DateInputBuilder(
@@ -69,8 +69,6 @@ export function DateInputBuilder(
         onChange,
         hourFormat,
     }: DateInputProps) => {
-        label = label ?? id;
-        label = ls(label) === 'LabelInfenranceFailed' ? label : ls(label);
         return (
             <Wraper
                 id={id}

@@ -1,5 +1,4 @@
 import React from 'react';
-import { LabelSelector } from '../types';
 import { WraperProps } from './Wraper';
 
 export interface InputNumberProps {
@@ -53,10 +52,10 @@ export interface BaseInputNumber {
     suffix?: string;
     prefix?: string;
     mode?: 'decimal' | 'currency';
-    currency: string;
-    minFractionDigits: number;
-    maxFractionDigits: number;
-    locale: string;
+    currency?: string;
+    minFractionDigits?: number;
+    maxFractionDigits?: number;
+    locale?: string;
 }
 
 export function InputNumberBuilder(
@@ -86,7 +85,6 @@ export function InputNumberBuilder(
             maxFractionDigits,
             locale,
         } = props;
-        label = label ?? id;
         let valueN: number | undefined = Number(value);
         if (isNaN(valueN)) valueN = undefined;
         return (

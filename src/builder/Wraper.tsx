@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { StringEmpty } from '../Generic';
+import { StringEmpty } from '../index';
 import { LabelSelector } from '../types';
 
 export interface WraperProps {
@@ -25,8 +25,8 @@ export const WraperBuilder = (ls: LabelSelector) => {
         if (hidden) return <></>;
         if ((StringEmpty(label) && StringEmpty(id)) || label === '')
             return <>{children}</>;
-        label = label ?? id;
-        label = ls(label) === 'LabelInfenranceFailed' ? label : ls(label);
+        label = label ?? id ?? '';
+        label = ls(label, undefined, label);
         let labelbody = (
             <div key={`${id}divlable`} className={className}>
                 <label htmlFor={id}>{label}</label>

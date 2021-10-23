@@ -1,5 +1,4 @@
 import React from 'react';
-import { LabelSelector } from '../types';
 import { WraperProps } from './Wraper';
 
 export interface EditorProps {
@@ -21,17 +20,16 @@ export interface EditorProps {
 }
 
 export interface BaseEditorProps {
-    value: string;
-    id: string;
-    style: React.CSSProperties;
+    value?: string;
+    id?: string;
+    style?: React.CSSProperties;
     //TODO deal with the any
-    onTextChange: (e: any) => void;
+    onTextChange?: (e: any) => void;
 }
 
 export function EditorBuilder(
     BaseEditor: React.FC<BaseEditorProps>,
-    Wraper: React.FC<WraperProps>,
-    ls: LabelSelector
+    Wraper: React.FC<WraperProps>
 ) {
     let Editor = (props: EditorProps) => {
         let {
@@ -47,12 +45,6 @@ export function EditorBuilder(
             hidden,
         } = props;
         if (hidden) return null;
-        label = label ?? id;
-        label =
-            ls(label, undefined, 'LabelInfenranceFailed') ===
-            'LabelInfenranceFailed'
-                ? label
-                : ls(label);
 
         if (disabled)
             return (

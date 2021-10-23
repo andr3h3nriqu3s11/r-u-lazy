@@ -2,15 +2,15 @@ import React, { MouseEventHandler } from 'react';
 import { LabelSelector } from '../types';
 
 export interface BaseButtonProps {
-    tooltip: string;
-    style: React.CSSProperties;
-    icon: string;
-    className: string;
-    onClick: MouseEventHandler<HTMLButtonElement>;
-    disabled: boolean;
-    label: string;
+    tooltip?: string;
+    style?: React.CSSProperties;
+    icon?: string;
+    className?: string;
+    onClick?: MouseEventHandler<HTMLButtonElement>;
+    disabled?: boolean;
+    label?: string;
     //TODO: improve this so that is restricted to the right params
-    type: string;
+    type?: string;
 }
 
 export interface ButtonProps {
@@ -34,7 +34,7 @@ export function ButtonBuilder(
 ) {
     const Button = (props: ButtonProps) => {
         let {
-            label,
+            label = '',
             hidden = false,
             type = 'submit',
             tooltip,

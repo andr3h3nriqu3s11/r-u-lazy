@@ -39,8 +39,7 @@ import {
 } from './builder/TextArea';
 import { WraperBuilder } from './builder/Wraper';
 import { FormBuilder, FormConfig, GDivBuilder } from './Form';
-import type { StateItems } from './types';
-import { LabelSelector } from './types';
+import { LabelSelector, StateItems } from './types';
 
 export function StringEmpty(s: string | null | undefined): boolean {
     return s === null || s === undefined || s === '';
@@ -65,10 +64,7 @@ interface BuildAllProps {
     BaseInputNumber?: React.FC<BaseInputNumber>;
 
     Dialog?: React.FC<DialogRequiredProps>;
-
-    Messages?: React.ForwardRefExoticComponent<
-        React.RefAttributes<unknown>
-    > | null;
+    Messages?: React.LazyExoticComponent<React.ComponentType>;
 }
 
 export interface Config extends FormConfig {}
@@ -92,16 +88,16 @@ export function BuildAll(
 ) {
     let Wraper = WraperBuilder(ls);
 
-    let Button: React.FC<ButtonProps> = null;
-    let InputMask: React.FC<InputMaskProps> = null;
-    let Editor: React.FC<EditorProps> = null;
-    let Input: React.FC<InputProps> = null;
-    let DateInput: React.FC<DateInputProps> = null;
-    let DialogPrompt: React.FC<DialogPromptProps> = null;
-    let TextArea: React.FC<TextAreaProps> = null;
-    let Dropdown: React.FC<DropdownProps<unknown>> = null;
-    let InputSwitch: React.FC<SwitchProps> = null;
-    let InputNumber: React.FC<InputNumberProps> = null;
+    let Button: React.FC<ButtonProps>;
+    let InputMask: React.FC<InputMaskProps>;
+    let Editor: React.FC<EditorProps>;
+    let Input: React.FC<InputProps>;
+    let DateInput: React.FC<DateInputProps>;
+    let DialogPrompt: React.FC<DialogPromptProps>;
+    let TextArea: React.FC<TextAreaProps>;
+    let Dropdown: React.FC<DropdownProps<unknown>>;
+    let InputSwitch: React.FC<SwitchProps>;
+    let InputNumber: React.FC<InputNumberProps>;
 
     if (BaseButton) {
         Button = ButtonBuilder(BaseButton, ls);
@@ -112,20 +108,20 @@ export function BuildAll(
     if (BaseInputMask) {
         InputMask = InputMaskBuilder(BaseInputMask, Wraper, ls);
     } else {
-        InputMask = DepThrowErrorBuilder<InputProps>(
+        InputMask = DepThrowErrorBuilder<InputMaskProps>(
             'InputMask',
             'BaseInputMask'
         );
     }
 
     if (BaseEditor) {
-        Editor = EditorBuilder(BaseInputMask, Wraper, ls);
+        Editor = EditorBuilder(BaseEditor, Wraper);
     } else {
         Editor = DepThrowErrorBuilder<EditorProps>('Editor', 'BaseEditor');
     }
 
     if (BaseInput) {
-        Input = InputBuilder(BaseInput, Wraper, ls);
+        Input = InputBuilder(BaseInput, Wraper);
     } else {
         Input = DepThrowErrorBuilder<InputProps>('Input', 'BaseInput');
     }
@@ -309,6 +305,7 @@ export const treatDate = ({
 }: TreatDateProps) => {
     if (!date || !date.match(/^[\d-]{10}T[\d:]{8}.*/)) return <span></span>;
     let matched = date.match(/^(\d{4})-(\d{2})-(\d{2})T([\d:]{8}).*/);
+    if (!matched) return '';
     let formated =
         matched[3] +
         '-' +

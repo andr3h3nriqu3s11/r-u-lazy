@@ -8,12 +8,12 @@ import { InputNumberProps } from './builder/InputNumber';
 import { SwitchProps } from './builder/InputSwitch';
 import { TextAreaProps } from './builder/TextArea';
 import { WraperProps } from './builder/Wraper';
-import { formatDate, StateIcon, StringEmpty, treatDate } from './Generic';
+import { formatDate, StateIcon, StringEmpty, treatDate } from './index';
 import { LabelSelector, StateItems } from './types';
 
 export type StringIndexed = Record<string, any>;
 
-interface FormProps<T extends StringIndexed = any> {
+export interface FormProps<T extends StringIndexed = any> {
     onSubmit?: React.FormEventHandler<HTMLFormElement>;
     children?: ReactElement<any, any>[] | ReactElement | null;
     t?: string;
@@ -42,9 +42,7 @@ interface HtmlElmProps<T> {
     Dropdown: React.FC<DropdownProps<T>>;
     InputSwitch: React.FC<SwitchProps>;
     InputNumber: React.FC<InputNumberProps>;
-    Messages: React.ForwardRefExoticComponent<
-        React.RefAttributes<unknown>
-    > | null;
+    Messages?: React.LazyExoticComponent<React.ComponentType>;
 }
 
 //Function that processes the form children
@@ -65,7 +63,7 @@ export const processChildren = <T extends StringIndexed>(
         Dropdown,
         Editor,
         InputNumber,
-        Messages
+        Messages,
     } = hemlProps;
 
     let obj: T = props.obj ?? ({} as T);
@@ -361,7 +359,6 @@ export const processChildren = <T extends StringIndexed>(
                 ls(vGen.props.l ?? '') === 'LabelInfenranceFailed'
                     ? vGen.props.l ?? ls(String(vGen.props.d))
                     : ls(vGen.props.l ?? '');
-            let hidden = vGen.props.h ?? false;
             let inputClass = vGen.props.fClass ?? props.fclass ?? 'p-col';
             let labelClass = vGen.props.lClass ?? props.lclass ?? 'p-col-3';
 
@@ -416,12 +413,15 @@ export const processChildren = <T extends StringIndexed>(
                 </div>
             );
         } else if (gen.props.t === 'messages') {
+            if (!Messages) {
+                throw 'Needed Messages to use GMessages check FormBuilder or BuildAll';
+            }
             //TODO: improve this
             let dGen: ReactElement<GMessagesProps<any, T>> = gen as any;
 
             return (
                 <div className="p-col-12">
-                    <Messages ref={dGen.props.refM.current} />
+                    <Messages ref={dGen.props.refM} />
                 </div>
             );
         }
@@ -500,7 +500,7 @@ GenericElement.defaultProps = {
 export const G = GenericElement;
 
 //Div
-interface GDivProps<T = any> extends GenericElementProps<T> {
+export interface GDivProps<T = any> extends GenericElementProps<T> {
     class?: string;
     style?: React.CSSProperties;
     children?: ReactElement[] | ReactElement | null;
@@ -526,7 +526,7 @@ export const GDivBuilder = (
 ) => {
     const GDiv: React.FC<GDivProps> = props => {
         let { children } = props;
-        let pChildren: ReactElement[] | ReactElement = [];
+        let pChildren: ReactElement[] | ReactElement | null | undefined = [];
 
         if (children) {
             if (Array.isArray(pChildren))
@@ -632,9 +632,8 @@ interface GenericInputElementProps<T extends StringIndexed = StringIndexed>
     //hidden = h
     h?: boolean;
 }
-export const GenericInputElement: React.FC<GenericInputElementProps> = <
-    T extends StringIndexed
->() => null;
+export const GenericInputElement: React.FC<GenericInputElementProps> = () =>
+    null;
 GenericInputElement.defaultProps = {
     isGenericFormElement: true,
     isGenericInputFormElement: true,
@@ -740,9 +739,7 @@ interface GDateInputProps<T extends StringIndexed = StringIndexed>
         };
     }) => void;
 }
-export const GDateInput: React.FC<GDateInputProps> = <T,>(
-    props: GDateInputProps<T>
-) => null;
+export const GDateInput: React.FC<GDateInputProps> = () => null;
 GDateInput.defaultProps = {
     isGenericFormElement: true,
     isGenericInputFormElement: true,

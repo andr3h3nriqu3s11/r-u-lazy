@@ -58,7 +58,7 @@ export function DialogPromptBuilder(
     }) => {
         let [visible, setVisible] = useState(false);
         if (hidden) return null;
-        let text = ls(textIn, 'dialog', textIn);
+        let text = ls(textIn ?? '', 'dialog', textIn);
         let footer = (
             <div>
                 <Button
@@ -106,12 +106,7 @@ export function DialogPromptBuilder(
                     footer={footer}
                     style={{ width: '50vw' }}
                     id={id}
-                    header={
-                        ls(label, 'button', 'LabelInfenranceFailed') ===
-                        'LabelInfenranceFailed'
-                            ? label
-                            : ls(label, 'button')
-                    }
+                    header={ls(label ?? '', 'button', label)}
                 >
                     {text}
                 </Dialog>

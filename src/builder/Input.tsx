@@ -1,5 +1,4 @@
 import React from 'react';
-import { LabelSelector } from '../types';
 import { WraperProps } from './Wraper';
 
 export interface InputProps {
@@ -31,8 +30,7 @@ export interface BaseInputProps {
 
 export function InputBuilder(
     BaseInput: React.FC<BaseInputProps>,
-    Wraper: React.FC<WraperProps>,
-    ls: LabelSelector
+    Wraper: React.FC<WraperProps>
 ) {
     const Input = (props: InputProps) => {
         let {
@@ -50,12 +48,6 @@ export function InputBuilder(
             gridless,
             title,
         } = props;
-        label = label ?? id;
-        label =
-            ls(label, undefined, 'LabelInfenranceFailed') ===
-            'LabelInfenranceFailed'
-                ? label
-                : ls(label);
         return (
             <Wraper
                 id={id}
@@ -64,16 +56,18 @@ export function InputBuilder(
                 hidden={hidden}
                 gridless={gridless}
             >
-                <BaseInput
-                    title={title}
-                    tooltip={tooltip}
-                    type={type}
-                    value={value}
-                    onChange={!disabled && onChange ? onChange : () => {}}
-                    id={id}
-                    disabled={disabled}
-                    required={required}
-                />
+                <div className={inputClass}>
+                    <BaseInput
+                        title={title}
+                        tooltip={tooltip}
+                        type={type}
+                        value={value}
+                        onChange={!disabled && onChange ? onChange : () => {}}
+                        id={id}
+                        disabled={disabled}
+                        required={required}
+                    />
+                </div>
             </Wraper>
         );
     };
