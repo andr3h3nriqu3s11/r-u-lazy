@@ -1,6 +1,6 @@
 {
   "name": "r-u-lazy",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "A lazy react lib",
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.js",
