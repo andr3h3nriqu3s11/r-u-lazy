@@ -9,7 +9,7 @@ import {
     DialogPromptBuilder,
     DialogPromptProps,
     DialogRequiredProps,
-} from './builder/Dialog';
+} from './builder/DialogPrompt';
 import {
     BaseDropdownProps,
     DropdownBuilder,

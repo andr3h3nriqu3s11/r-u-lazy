@@ -22,7 +22,7 @@ interface ButtonRequiredProps {
     icon?: string;
     wraperClass?: string;
     onClick?: React.MouseEventHandler<HTMLButtonElement>;
-    type?: 'button';
+    type?: 'button' | 'submit' | 'reset';
     disabled?: boolean;
 }
 
@@ -71,6 +71,7 @@ export function DialogPromptBuilder(
                         setVisible(false);
                         if (onConfirm) onConfirm(e);
                     }}
+                    type={'button'}
                 />
                 <Button
                     label={nobtt?.label ?? 'no'}
@@ -82,6 +83,7 @@ export function DialogPromptBuilder(
                         setVisible(false);
                         if (onDeny) onDeny(e);
                     }}
+                    type={'button'}
                 />
             </div>
         );
