@@ -24,8 +24,7 @@ export interface ButtonProps {
     bttClass?: string;
     tooltip?: string;
     style?: React.CSSProperties;
-    //TODO add other types
-    type?: 'button';
+    type?: 'button' | 'submit' | 'reset';
 }
 
 export function ButtonBuilder(
