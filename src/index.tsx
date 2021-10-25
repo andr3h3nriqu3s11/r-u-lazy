@@ -1,49 +1,14 @@
-import React, { MouseEvent, useState } from 'react';
-import { BaseButtonProps, ButtonBuilder, ButtonProps } from './builder/Button';
-import {
-    BaseDateInputProps,
-    DateInputBuilder,
-    DateInputProps,
-} from './builder/DateInput';
-import {
-    DialogPromptBuilder,
-    DialogPromptProps,
-    DialogRequiredProps,
-} from './builder/DialogPrompt';
-import {
-    BaseDropdownProps,
-    DropdownBuilder,
-    DropdownProps,
-} from './builder/Dropdown';
-import { BaseEditorProps, EditorBuilder, EditorProps } from './builder/Editor';
-import { BaseInputProps, InputBuilder, InputProps } from './builder/Input';
-import {
-    BaseInputMaskProps,
-    InputMaskBuilder,
-    InputMaskProps,
-} from './builder/InputMask';
-import {
-    BaseInputNumber,
-    InputNumberBuilder,
-    InputNumberProps,
-} from './builder/InputNumber';
-import {
-    BaseInputSwitchProps,
-    InputSwitchBuilder,
-    SwitchProps,
-} from './builder/InputSwitch';
-import {
-    BaseTextAreaProps,
-    TextAreaBuilder,
-    TextAreaProps,
-} from './builder/TextArea';
-import { WraperBuilder } from './builder/Wraper';
-import { FormBuilderOld, FormConfig, GDivBuilder } from './Form';
-import { LabelSelector, StateItems } from './types';
+import React from 'react';
+
+export * from './Form';
 
 export function StringEmpty(s: string | null | undefined): boolean {
     return s === null || s === undefined || s === '';
 }
+
+/*
+
+Note: keeping this here because it could be useful in the future
 
 let DepThrowErrorBuilder = <T extends unknown>(name: string, dep: string) => {
     let DepThrow: React.FC<T> = () => {
@@ -52,185 +17,11 @@ let DepThrowErrorBuilder = <T extends unknown>(name: string, dep: string) => {
     return DepThrow;
 };
 
-interface BuildAllProps {
-    BaseButton?: React.FC<BaseButtonProps>;
-    BaseInputMask?: React.FC<BaseInputMaskProps>;
-    BaseEditor?: React.FC<BaseEditorProps>;
-    BaseInput?: React.FC<BaseInputProps>;
-    BaseDateInput?: React.FC<BaseDateInputProps>;
-    BaseTextArea?: React.FC<BaseTextAreaProps>;
-    BaseDropdown?: React.FC<BaseDropdownProps>;
-    BaseInputSwitch?: React.FC<BaseInputSwitchProps>;
-    BaseInputNumber?: React.FC<BaseInputNumber>;
+*/
 
-    Dialog?: React.FC<DialogRequiredProps>;
-    Messages?: React.LazyExoticComponent<React.ComponentType>;
-}
+/* 
 
-export interface Config extends FormConfig {}
-
-export function BuildAll(
-    ls: LabelSelector,
-    config: Config,
-    {
-        BaseButton,
-        BaseInputMask,
-        BaseEditor,
-        BaseInput,
-        BaseDateInput,
-        Dialog,
-        BaseTextArea,
-        BaseDropdown,
-        BaseInputSwitch,
-        BaseInputNumber,
-        Messages,
-    }: BuildAllProps
-) {
-    let Wraper = WraperBuilder(ls);
-
-    let Button: React.FC<ButtonProps>;
-    let InputMask: React.FC<InputMaskProps>;
-    let Editor: React.FC<EditorProps>;
-    let Input: React.FC<InputProps>;
-    let DateInput: React.FC<DateInputProps>;
-    let DialogPrompt: React.FC<DialogPromptProps>;
-    let TextArea: React.FC<TextAreaProps>;
-    let Dropdown: React.FC<DropdownProps<unknown>>;
-    let InputSwitch: React.FC<SwitchProps>;
-    let InputNumber: React.FC<InputNumberProps>;
-
-    if (BaseButton) {
-        Button = ButtonBuilder(BaseButton, ls);
-    } else {
-        Button = DepThrowErrorBuilder<ButtonProps>('Button', 'BaseButton');
-    }
-
-    if (BaseInputMask) {
-        InputMask = InputMaskBuilder(BaseInputMask, Wraper, ls);
-    } else {
-        InputMask = DepThrowErrorBuilder<InputMaskProps>(
-            'InputMask',
-            'BaseInputMask'
-        );
-    }
-
-    if (BaseEditor) {
-        Editor = EditorBuilder(BaseEditor, Wraper);
-    } else {
-        Editor = DepThrowErrorBuilder<EditorProps>('Editor', 'BaseEditor');
-    }
-
-    if (BaseInput) {
-        Input = InputBuilder(BaseInput, Wraper);
-    } else {
-        Input = DepThrowErrorBuilder<InputProps>('Input', 'BaseInput');
-    }
-
-    if (BaseDateInput) {
-        DateInput = DateInputBuilder(BaseDateInput, Wraper, ls);
-    } else {
-        DateInput = DepThrowErrorBuilder<DateInputProps>(
-            'DateInput',
-            'BaseDateInput'
-        );
-    }
-
-    if (BaseTextArea) {
-        TextArea = TextAreaBuilder(BaseTextArea, Wraper);
-    } else {
-        TextArea = DepThrowErrorBuilder<TextAreaProps>(
-            'TextArea',
-            'BaseTextArea'
-        );
-    }
-
-    if (BaseDropdown) {
-        Dropdown = DropdownBuilder(BaseDropdown, Wraper);
-    } else {
-        Dropdown = DepThrowErrorBuilder<DropdownProps<unknown>>(
-            'Dropdown',
-            'BaseDropdown'
-        );
-    }
-
-    if (BaseInputSwitch) {
-        InputSwitch = InputSwitchBuilder(BaseInputSwitch, Wraper);
-    } else {
-        InputSwitch = DepThrowErrorBuilder<SwitchProps>(
-            'InputSwitch',
-            'BaseInputSwitch'
-        );
-    }
-
-    if (BaseInputNumber) {
-        InputNumber = InputNumberBuilder(BaseInputNumber, Wraper);
-    } else {
-        InputNumber = DepThrowErrorBuilder<InputNumberProps>(
-            'InputNumber',
-            'BaseInputNumber'
-        );
-    }
-
-    if (Button && Dialog) {
-        DialogPrompt = DialogPromptBuilder(Dialog, Button, ls);
-    } else {
-        DialogPrompt = DepThrowErrorBuilder<DialogPromptProps>(
-            'DialogPrompt',
-            'Button and Dialog'
-        );
-    }
-
-    if (!Messages) {
-        DialogPrompt = DepThrowErrorBuilder<DialogPromptProps>(
-            'Messages',
-            'Messages'
-        );
-    }
-
-    //Form stuff
-
-    let Form = FormBuilderOld(ls, config, {
-        InputMask,
-        Wraper,
-        Editor,
-        Input,
-        InputNumber,
-        InputSwitch,
-        DateInput,
-        TextArea,
-        Dropdown,
-        Messages,
-    });
-
-    let GDiv = GDivBuilder(ls, config, {
-        InputMask,
-        Wraper,
-        Editor,
-        Input,
-        InputNumber,
-        InputSwitch,
-        DateInput,
-        TextArea,
-        Dropdown,
-        Messages,
-    });
-
-    return {
-        DialogPrompt,
-        Button,
-        InputMask,
-        Editor,
-        Input,
-        DateInput,
-        Wraper,
-        TextArea,
-        Dropdown,
-        InputSwitch,
-        InputNumber,
-        Form,
-        GDiv,
-    };
-}
+TODO: Some work need to be done to make this useful but it's also a pretty neat function
 
 //TODO: This needs to be refactored so that does not have any dependency on an icons packs
 export function StateIcon(props: {
@@ -288,7 +79,7 @@ export function StateIcon(props: {
             style={{ color: 'grey', fontSize: '1.83em' }}
         />
     );
-}
+} */
 
 interface TreatDateProps {
     date: string;
