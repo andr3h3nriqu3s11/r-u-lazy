@@ -1,6 +1,8 @@
 # R-u-lazy
 
-A React Framework for lazy people
+A React Framework for lazy people.
+
+There are other projects that help you out build smarter forms such as [Formik](https://formik.org/) and [React Final Form](final-form.org) 
 
 ## Install
 
@@ -48,13 +50,61 @@ export let { Element: Button, Interceptor: ButtonInterceptor } = FormElementBuil
         );
     }
 );
-
 // Now you have a button that only works insides Forms and that if the label is 'foo' it will display 'bar' and display anything else 
 
+// Create Properties for the input filed
+export interface InputProps {
+    disabled?: boolean;
+    value?: string;
+    onChange?: React.ChangeEventHandler<HTMLInputElement>;
+}
+
+// Because this field needs access to the data we use the FormElementDataBuilder so that we can get access to the data property which will give us access to the field in the object with the name of d form the new object that is put in the form
+export let { Element: Input, Interceptor: InputInterceptor } =
+    FormElementDataBuilder<
+        InputProps,
+        unknown,
+        FormExtraProps,
+        //Change this for the type of the changing function you decided
+        // You can also use this type for a generic function that returns a void
+        UnknownFunction<void, unknown>,
+        'input'
+    >(
+        'input',
+        ({
+            props: { value, onChange, disabled },
+            formProps,
+            // Data form the object that is put on the form 
+            data,
+            // setData form the function that is put on the form 
+            setData,
+        }) => {
+            return (
+                <input
+                    value={value ?? data ?? ''}
+                    disabled={disabled ?? formProps.extra.disabled}
+                    onChange={e => {
+                        if (onChange) {
+                            onChange(e);
+                            return;
+                        }
+                        if (setData) {
+                            setData({
+                                value: e.target.value,
+                                originalValue: e,
+                            });
+                            return;
+                        }
+                    }}
+                />
+            );
+        }
+    );
+
 // Create your Form and Div elements 
-// Since we want the button to work in this form we add the interceptor to the interceptor list
-export const { Form, Div } = FormBuilder<FormExtraProps, () => void, unknown>(
-    [ButtonInterceptor]
+// Since we want the button and the input to work in this form we add the interceptor to the interceptor list
+export const { Form, Div } = FormBuilder<FormExtraProps, UnknownFunction<void, unknown>, unknown>(
+    [ButtonInterceptor, InputInterceptor]
 );
 ```
 
@@ -63,3 +113,4 @@ export const { Form, Div } = FormBuilder<FormExtraProps, () => void, unknown>(
 - [ ] Improve Documentation
 - [ ] Add some default fields
 - [ ] Complete the button field
+- [ ] Complete the input field

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { formatDate } from './index';
 
+export type UnknownFunction<T, A> = (...args: A[]) => T;
+
 export type AllPossible =
     | string
     | number

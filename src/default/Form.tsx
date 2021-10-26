@@ -1,5 +1,6 @@
 import { FormBuilder } from '..';
 import { ButtonInterceptor } from './Button';
+import { InputInterceptor } from './Input';
 
 export interface FormExtraProps {
     disabled?: boolean;
@@ -7,4 +8,5 @@ export interface FormExtraProps {
 
 export const { Form, Div } = FormBuilder<FormExtraProps, () => void, unknown>([
     ButtonInterceptor,
+    InputInterceptor,
 ]);
