@@ -1,8 +1,5 @@
 import React from 'react';
-import {
-    FormElementDataBuilder,
-    UnknownFunction
-} from '..';
+import { FormElementDataBuilder, UnknownFunction } from '..';
 import { FormExtraProps } from './Form';
 
 //TODO more work to be done
@@ -16,7 +13,7 @@ export interface InputProps {
 export let { Element: Input, Interceptor: InputInterceptor } =
     FormElementDataBuilder<
         InputProps,
-        unknown,
+        /*unknown,*/
         FormExtraProps,
         UnknownFunction<void, unknown>,
         'input'
@@ -31,7 +28,7 @@ export let { Element: Input, Interceptor: InputInterceptor } =
             return (
                 <input
                     value={value ?? data ?? ''}
-                    disabled={disabled ?? formProps.extra.disabled}
+                    disabled={disabled ?? formProps.extra?.disabled}
                     onChange={e => {
                         if (onChange) {
                             onChange(e);

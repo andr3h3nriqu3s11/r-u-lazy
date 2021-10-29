@@ -1,4 +1,4 @@
-import { FormBuilder } from '..';
+import { DefaultSetFunctionType, FormBuilder } from '..';
 import { ButtonInterceptor } from './Button';
 import { InputInterceptor } from './Input';
 
@@ -6,7 +6,8 @@ export interface FormExtraProps {
     disabled?: boolean;
 }
 
-export const { Form, Div } = FormBuilder<FormExtraProps, () => void, unknown>([
-    ButtonInterceptor,
-    InputInterceptor,
-]);
+export const { Form, Div } = FormBuilder<
+    FormExtraProps,
+    DefaultSetFunctionType,
+    unknown
+>([ButtonInterceptor, InputInterceptor]);

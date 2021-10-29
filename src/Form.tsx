@@ -19,10 +19,13 @@ export interface RULazyFormElement<Name extends string> {
     _isLazyElement?: boolean;
 }
 
-export interface RULazyFormObjectAccessElement<T, Name extends string>
+export interface RULazyFormObjectAccessElement</*T, */ Name extends string>
     extends RULazyFormElement<Name> {
     _isLazyObject?: true;
-    d: keyof T;
+
+    //TODO have to do this
+    //d: keyof T;
+    d: string;
 }
 
 export interface RULazyInterceptor<BaseProps, Extra, K = {}> {
@@ -37,7 +40,7 @@ export type RULazyInterceptorObjectAccess<BaseProps, Extra, SetT> =
 
 export interface FormPassDownProps<Extra> {
     hidden?: boolean;
-    extra: Extra;
+    extra?: Extra;
 }
 
 export interface FormProps<T, SetT, Extra>
@@ -190,7 +193,7 @@ export function FormElementBuilder<Props, Extra, Name extends string>(
 
 export function FormElementDataBuilder<
     Props,
-    T,
+    /*T,*/
     Extra,
     SetT,
     Name extends string
@@ -203,7 +206,7 @@ export function FormElementDataBuilder<
         }
     >
 ) {
-    let Element: React.FC<RULazyFormObjectAccessElement<T, Name> & Props> =
+    let Element: React.FC<RULazyFormObjectAccessElement</*T,*/ Name> & Props> =
         () => null;
     //TODO: There is probably a better way of doing this
     (Element.defaultProps as any) = {
@@ -222,65 +225,80 @@ export function FormElementDataBuilder<
 
 export type StringIndexed = Record<string, any>;
 
-/**
- *
- *
- * Old
- *
- *
- */
-
-interface useDataObjectExtra {
-    regex?: string | RegExp;
-    replace?: { filter: string | RegExp; value: string };
-    switch?: boolean;
+export interface useDataObjectExtra {
+    setValue?: boolean;
     checkBox?: boolean;
-    multiple?: boolean;
-    editor?: boolean;
+    checkBoxNumber?: boolean;
     date?: boolean;
-    id?: string;
+    dateStr?: boolean;
     withTime?: boolean;
+    number?: boolean;
+    replace?: { filter: string | RegExp; value: string };
+    regex?: string | RegExp;
 }
+
+export type DefaultSetFunctionType = (
+    data: { e: Event; newValue: any; id: string } & useDataObjectExtra
+) => void;
+
+// Todo: Documentation
+
 export function useDataObject<T extends StringIndexed>(initial: T) {
     let [obj, setObjState] = useState(initial);
     let clear = () => {
         setObjState(initial);
     };
-    let setObj = (e: any, extra?: useDataObjectExtra) => {
+    let setObj: DefaultSetFunctionType = ({
+        e,
+        id,
+        newValue,
+        checkBox,
+        checkBoxNumber,
+        setValue,
+        date,
+        dateStr,
+        withTime,
+        replace,
+        regex,
+        number,
+    }) => {
         if (e.preventDefault) e.preventDefault();
-        let target = e?.target;
-        let value = (target?.value ?? '') + '';
-        let id: string = target?.id ?? '';
-        if (extra?.editor) {
-            id = extra?.id ?? '';
-            value = e.htmlValue;
-        }
+        let value = String(newValue ?? '');
         if (!id) return;
+
         let toSet: StringIndexed = obj;
-        if (extra?.checkBox) {
-            toSet[id] = toSet[id] === 1 ? 0 : 1;
+        if (number) {
+            toSet[id] = Number(value);
             setObjState({ ...toSet } as T);
             return;
-        } else if (extra?.switch) {
-            //Value was forced to be a string
-            toSet[id] = value === 'true' ? 1 : 0;
+        } else if (checkBox) {
+            let checkBoxV = false;
+            if (newValue) {
+                checkBoxV = true;
+            }
+            if (checkBoxNumber) {
+                toSet[id] = checkBoxV ? 1 : 0;
+            } else {
+                toSet[id] = checkBoxV;
+            }
             setObjState({ ...toSet } as T);
             return;
-        } else if (extra?.multiple) {
-            value = e.value;
-            toSet[id] = value;
+        } else if (setValue) {
+            toSet[id] = newValue;
             setObjState({ ...toSet } as T);
             return;
-        } else if (extra?.date) {
-            value = formatDate(value, extra.withTime);
+        } else if (date) {
+            toSet[id] = new Date(newValue);
+            setObjState({ ...toSet } as T);
+        } else if (dateStr) {
+            value = formatDate(value, withTime);
         }
 
-        if (extra?.replace)
-            value = value.replace(extra.replace.filter, extra.replace.value);
+        if (replace) value = value.replace(replace.filter, replace.value);
         if (
-            extra?.regex &&
-            (value.match(extra.regex) === null ||
-                (value.match(extra.regex) ?? [])[0] !== value)
+            regex &&
+            (value.match(regex) === null ||
+                (value.match(regex) ?? [])[0] !== value)
         )
             return;
         toSet[id] = value;

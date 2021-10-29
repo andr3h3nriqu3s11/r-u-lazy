@@ -67,7 +67,10 @@ export let { Element: Input, Interceptor: InputInterceptor } =
         FormExtraProps,
         //Change this for the type of the changing function you decided
         // You can also use this type for a generic function that returns a void
-        UnknownFunction<void, unknown>,
+        // UnknownFunction<void, unknown>,
+        // You can also use a function that that is provided with this package
+        // that has some nice functionality 
+        DefaultSetFunctionType,
         'input'
     >(
         'input',
@@ -103,9 +106,20 @@ export let { Element: Input, Interceptor: InputInterceptor } =
 
 // Create your Form and Div elements 
 // Since we want the button and the input to work in this form we add the interceptor to the interceptor list
-export const { Form, Div } = FormBuilder<FormExtraProps, UnknownFunction<void, unknown>, unknown>(
+export const { Form, Div } = FormBuilder<FormExtraProps, DefaultSetFunctionType, unknown>(
     [ButtonInterceptor, InputInterceptor]
 );
+
+// This is a form example
+
+let FormExample = () => {
+    let { obj, setObj } = useDataObject({ name: '', age: 0 });
+    return (
+        <Form obj={obj} setObj={setObj}>
+            <Input d="name" />
+        </Form>
+    );
+};
 ```
 
 ## TODOs
