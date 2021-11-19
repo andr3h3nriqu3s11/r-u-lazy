@@ -126,5 +126,5 @@ let FormExample = () => {
 
 - [ ] Improve Documentation
 - [ ] Add some default fields
-- [ ] Complete the button field
+- [x] Complete the button field
 - [ ] Complete the input field
