@@ -8,6 +8,5 @@ export interface FormExtraProps {
 
 export const { Form, Div } = FormBuilder<
     FormExtraProps,
-    DefaultSetFunctionType,
-    unknown
+    DefaultSetFunctionType
 >([ButtonInterceptor, InputInterceptor]);

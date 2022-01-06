@@ -19,19 +19,17 @@ export interface RULazyFormElement<Name extends string> {
     _isLazyElement?: boolean;
 }
 
-export interface RULazyFormObjectAccessElement</*T, */ Name extends string>
+export interface RULazyFormObjectAccessElement<T, Name extends string>
     extends RULazyFormElement<Name> {
     _isLazyObject?: true;
 
-    //TODO have to do this
-    //d: keyof T;
-    d: string;
+    d: keyof T;
 }
 
 export interface RULazyInterceptor<BaseProps, Extra, K = {}> {
     t: string;
     Component: React.FC<
-        { props: BaseProps; formProps: FormPassDownProps<Extra> } & K
+        { props: BaseProps; formProps?: FormPassDownProps<Extra> } & K
     >;
 }
 
@@ -45,7 +43,7 @@ export interface FormPassDownProps<Extra> {
 
 export interface FormProps<T, SetT, Extra>
     extends FormPassDownProps<Extra>,
-        RULazyFormElement<'form'> {
+    RULazyFormElement<'form'> {
     obj: T;
     setObj: SetT;
 
@@ -56,7 +54,7 @@ export interface FormProps<T, SetT, Extra>
     formRef?: (e: HTMLFormElement | null) => void;
 }
 
-export function FormBuilder<Extra, SetT, T>(
+export function FormBuilder<Extra, SetT>(
     formElements: RULazyInterceptor<unknown, Extra>[]
 ) {
     interface ProcessChildren<T, SetT, Extra> extends FormPassDownProps<Extra> {
@@ -71,27 +69,20 @@ export function FormBuilder<Extra, SetT, T>(
         children: AllPossible;
     }
 
-    const DivInterceptor: RULazyInterceptor<
-        DivProps,
-        Extra,
-        {
-            setObj: SetT;
-            obj: T;
-        }
-    > = {
+    const DivInterceptor = {
         t: 'div',
-        Component: ({ props, formProps, setObj, obj }) => {
+        Component: <T extends StringIndexed>({ props, formProps, setObj, obj }: { setObj: SetT, obj: T, props: DivProps, formProps: Extra }) => {
             return (
                 <div className={props.className}>
                     {React.Children.map(props.children, e =>
-                        processChildren(e, { ...formProps, setObj, obj })
+                        processChildren<T>(e, { ...formProps, setObj, obj })
                     )}
                 </div>
             );
         },
     };
 
-    const processChildren = (
+    const processChildren = <T extends StringIndexed>(
         a: AllPossible,
         props: ProcessChildren<T, SetT, Extra>
     ): AllPossible => {
@@ -150,7 +141,7 @@ export function FormBuilder<Extra, SetT, T>(
         return ai;
     };
 
-    const Form: React.FC<FormProps<T, SetT, Extra>> = props => {
+    const Form = <T extends StringIndexed>(props: FormProps<T, SetT, Extra>) => {
         let { onSubmit, children, hidden } = props;
 
         if (hidden) return null;
@@ -159,9 +150,9 @@ export function FormBuilder<Extra, SetT, T>(
             <form
                 style={{ width: '100%', height: '100%' }}
                 onSubmit={onSubmit}
-                ref={e => (props.formRef ?? (() => {}))(e)}
+                ref={e => (props.formRef ?? (() => { }))(e)}
             >
-                {React.Children.map(children, e => processChildren(e, props))}
+                {React.Children.map(children, e => processChildren<T>(e, props))}
             </form>
         );
     };
@@ -174,9 +165,9 @@ export function FormBuilder<Extra, SetT, T>(
 
 export function FormElementBuilder<Props, Extra, Name extends string>(
     name: Name,
-    FC: React.FC<{ props: Props; formProps: FormPassDownProps<Extra> }>
+    FC: React.FC<{ props: Props; formProps?: FormPassDownProps<Extra> }>
 ) {
-    let Element: React.FC<Props & RULazyFormElement<Name>> = () => null;
+    let Element: React.FC<Props & RULazyFormElement<Name>> = (props: Props) => FC({ props: props, formProps: undefined });
     //TODO: There is probably a better way of doing this
     (Element as any).defaultProps = {
         _isLazyElement: true,
@@ -200,16 +191,19 @@ export function FormElementDataBuilder<
 >(
     name: Name,
     FC: React.FC<
-        { props: Props; formProps: FormPassDownProps<Extra> } & {
+        {
+            props: Props;
+            formProps?: FormPassDownProps<Extra>;
             data: any;
             setData: SetT;
         }
     >
 ) {
-    let Element: React.FC<RULazyFormObjectAccessElement</*T,*/ Name> & Props> =
-        () => null;
+    let Element =
+        <T extends StringIndexed>(props: RULazyFormObjectAccessElement<T, Name> & Props & { data: any, setData: SetT }) => FC({ props: props, setData: props.setData, data: props.data });
+
     //TODO: There is probably a better way of doing this
-    (Element.defaultProps as any) = {
+    (Element as any).defaultProps = {
         _isLazyElement: true,
         _isLazyObject: true,
         _t: name,

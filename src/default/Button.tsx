@@ -1,8 +1,11 @@
+/**
+ *
+ * Describes the code for a simple button custom element that is based on the default value
+ *
+*/
 import React from 'react';
 import { AllPossible, FormElementBuilder } from '..';
 import { FormExtraProps } from './Form';
-
-//TODO more work to be done
 
 export interface ButtonProps {
     disabled?: boolean;
@@ -28,7 +31,7 @@ export let { Element: Button, Interceptor: ButtonInterceptor } =
                     type={type}
                     id={id}
                     className={className}
-                    disabled={disabled ?? formProps.extra?.disabled}
+                    disabled={disabled ?? formProps?.extra?.disabled}
                 >
                     {children}
                 </button>

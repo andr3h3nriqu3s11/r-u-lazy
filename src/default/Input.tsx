@@ -1,3 +1,8 @@
+/**
+ *
+ * Describes the Code for a simple custom input element that is based on the default value
+ *
+*/
 import React from 'react';
 import { FormElementDataBuilder, UnknownFunction } from '..';
 import { FormExtraProps } from './Form';
@@ -8,19 +13,22 @@ export interface InputProps {
     disabled?: boolean;
     value?: string;
     onChange?: React.ChangeEventHandler<HTMLInputElement>;
+
+    style?: React.CSSProperties;
+    className?: string;
+    inputType?: string;
 }
 
 export let { Element: Input, Interceptor: InputInterceptor } =
     FormElementDataBuilder<
         InputProps,
-        /*unknown,*/
         FormExtraProps,
         UnknownFunction<void, unknown>,
         'input'
     >(
         'input',
         ({
-            props: { value, onChange, disabled },
+            props: { value, onChange, disabled, style, className, inputType },
             formProps,
             data,
             setData,
@@ -28,7 +36,10 @@ export let { Element: Input, Interceptor: InputInterceptor } =
             return (
                 <input
                     value={value ?? data ?? ''}
-                    disabled={disabled ?? formProps.extra?.disabled}
+                    disabled={disabled ?? formProps?.extra?.disabled}
+                    style={style}
+                    className={className}
+                    type={inputType}
                     onChange={e => {
                         if (onChange) {
                             onChange(e);
@@ -41,8 +52,5 @@ export let { Element: Input, Interceptor: InputInterceptor } =
                             });
                             return;
                         }
-                    }}
-                />
-            );
-        }
-    );
+                    }} />)
+        });
